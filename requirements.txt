@@ -1,5 +1,5 @@
 aria2p
-pyrogram
+git+https://github.com/KurimuzonAkuma/pyrogram
 pymongo
 motor
 shortzy
