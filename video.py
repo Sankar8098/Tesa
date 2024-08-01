@@ -3,9 +3,9 @@ import aria2p
 from datetime import datetime
 from status import format_progress_bar
 import asyncio
-import os, time
+import os
+import time
 import logging
-
 
 aria2 = aria2p.API(
     aria2p.Client(
@@ -14,10 +14,21 @@ aria2 = aria2p.API(
         secret=""
     )
 )
-async def download_video(url, reply_msg, user_mention, user_id):
-    response = requests.get(f"https://terabox.udayscriptsx.workers.dev/?url={url}")
-    response.raise_for_status()
-    data = response.json()
+
+async def download_video(url, reply_msg, user_mention, user_id, retries=3, delay=5):
+    for attempt in range(retries):
+        try:
+            response = requests.get(f"https://terabox.udayscriptsx.workers.dev/?url={url}")
+            response.raise_for_status()
+            data = response.json()
+            break  # Exit the loop if the request is successful
+        except requests.exceptions.RequestException as e:
+            logging.error(f"Error fetching video data: {e}")
+            if attempt < retries - 1:
+                logging.info(f"Retrying in {delay} seconds...")
+                await asyncio.sleep(delay)
+            else:
+                raise Exception("Failed to fetch video data after multiple attempts")
 
     resolutions = data["response"][0]["resolutions"]
     fast_download_link = resolutions["Fast Download"]
@@ -119,3 +130,4 @@ async def upload_video(client, file_path, thumbnail_path, video_title, reply_msg
     os.remove(file_path)
     os.remove(thumbnail_path)
     return collection_message.id
+        
